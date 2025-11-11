@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FrigoChef – Cosa cucino con quello che ho?</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>FrigoChef <i class="fas fa-utensils"></i> – Cosa cucino con quello che ho?</h1>
+        </header>
+
+        <main>
+            <!-- Tab Navigation -->
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="ingredients-tab"><i class="fas fa-search"></i> Cerca con ingredienti</button>
+                <button class="tab-btn" data-tab="preferences-tab"><i class="fas fa-heart"></i> Genera in base ai tuoi gusti</button>
+            </div>
+
+            <!-- Tab 1: Cerca con ingredienti -->
+            <div id="ingredients-tab" class="tab-content active">
+                <section class="ingredients-section">
+                    <div class="input-group">
+                        <input 
+                            type="text" 
+                            id="ingredientInput" 
+                            placeholder="Inserisci un ingrediente (es: pomodoro, uova, farina...)"
+                            autocomplete="off"
+                        >
+                        <button id="addIngredientBtn" class="btn btn-primary"><i class="fas fa-plus"></i> Aggiungi ingrediente</button>
+                    </div>
+                    
+                    <div id="ingredientsList" class="ingredients-tags">
+                        <!-- Gli ingredienti verranno aggiunti qui dinamicamente -->
+                    </div>
+                </section>
+
+                <section class="search-section">
+                    <button id="searchRecipesBtn" class="btn btn-search"><i class="fas fa-search"></i> Cerca ricette</button>
+                    <button id="testAPIBtn" class="btn btn-test"><i class="fas fa-key"></i> Testa API Key</button>
+                </section>
+
+                <section id="apiTestResult" class="api-test-result hidden">
+                    <!-- Risultato del test API verrà mostrato qui -->
+                </section>
+
+                <section id="resultsSection" class="results-section hidden">
+                    <h2>Ricette compatibili</h2>
+                    <div id="recipesContainer" class="recipes-container">
+                        <!-- Le ricette verranno mostrate qui -->
+                    </div>
+                </section>
+
+                <section id="emptyState" class="empty-state hidden">
+                    <p>Niente nel frigo? Forse è ora di fare la spesa <i class="fas fa-shopping-cart"></i></p>
+                </section>
+            </div>
+
+            <!-- Tab 2: Genera in base ai gusti -->
+            <div id="preferences-tab" class="tab-content">
+                <section class="preferences-section">
+                    <h3>Raccontaci i tuoi gusti</h3>
+                    <p class="section-description">Compila i campi qui sotto per generare una ricetta personalizzata in base alle tue preferenze</p>
+
+                    <div class="preferences-form">
+                        <div class="form-group">
+                            <label for="cuisineType">Tipo di cucina preferita:</label>
+                            <select id="cuisineType" class="form-input">
+                                <option value="">Qualsiasi</option>
+                                <option value="italiana">Italiana</option>
+                                <option value="francese">Francese</option>
+                                <option value="asiatica">Asiatica</option>
+                                <option value="messicana">Messicana</option>
+                                <option value="mediterranea">Mediterranea</option>
+                                <option value="americana">Americana</option>
+                                <option value="indiana">Indiana</option>
+                                <option value="giapponese">Giapponese</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="mealType">Tipo di pasto:</label>
+                            <select id="mealType" class="form-input">
+                                <option value="">Qualsiasi</option>
+                                <option value="colazione">Colazione</option>
+                                <option value="pranzo">Pranzo</option>
+                                <option value="cena">Cena</option>
+                                <option value="spuntino">Spuntino/Dolce</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="dietaryRestrictions">Restrizioni dietetiche:</label>
+                            <div class="checkbox-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="vegetarian" value="vegetariano">
+                                    Vegetariano
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="vegan" value="vegano">
+                                    Vegano
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="glutenFree" value="senza glutine">
+                                    Senza glutine
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="dairyFree" value="senza latticini">
+                                    Senza latticini
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="preferredIngredients">Ingredienti preferiti (opzionale, separati da virgola):</label>
+                            <input 
+                                type="text" 
+                                id="preferredIngredients" 
+                                class="form-input"
+                                placeholder="es: pomodoro, basilico, mozzarella..."
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="cookingTime">Tempo di preparazione massimo:</label>
+                            <select id="cookingTime" class="form-input">
+                                <option value="">Qualsiasi</option>
+                                <option value="15">15 minuti</option>
+                                <option value="30">30 minuti</option>
+                                <option value="45">45 minuti</option>
+                                <option value="60">1 ora</option>
+                                <option value="120">2+ ore</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="additionalPreferences">Altre preferenze o descrizioni (opzionale):</label>
+                            <textarea 
+                                id="additionalPreferences" 
+                                class="form-input form-textarea"
+                                placeholder="es: piatto piccante, ricetta veloce, comfort food..."
+                                rows="3"
+                            ></textarea>
+                        </div>
+
+                        <button id="generateRecipeBtn" class="btn btn-generate"><i class="fas fa-magic"></i> Genera Ricetta</button>
+                    </div>
+                </section>
+
+                <section id="preferencesResultsSection" class="results-section hidden">
+                    <h2>La tua ricetta personalizzata</h2>
+                    <div id="preferencesRecipesContainer" class="recipes-container">
+                        <!-- La ricetta generata verrà mostrata qui -->
+                    </div>
+                </section>
+
+                <section id="preferencesLoading" class="loading hidden">
+                    Generando la tua ricetta personalizzata...
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
+
