@@ -164,6 +164,45 @@
         </main>
     </div>
 
+    <!-- API Key Toggle Button -->
+    <button id="apiKeyToggleBtn" class="api-key-toggle-btn" title="Configura API Key">
+        <i class="fas fa-key"></i>
+    </button>
+
+    <!-- API Key Modal -->
+    <div id="apiKeyModal" class="api-key-modal hidden">
+        <div class="api-key-modal-overlay"></div>
+        <div class="api-key-modal-content">
+            <div class="api-key-modal-header">
+                <h3><i class="fas fa-key"></i> Configurazione API Key</h3>
+                <button id="apiKeyCloseBtn" class="api-key-close-btn" aria-label="Chiudi">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="api-key-modal-body">
+                <p class="api-key-description">Inserisci la tua OpenRouter API Key per utilizzare le funzionalità AI</p>
+                <div class="api-key-input-group">
+                    <input 
+                        type="password" 
+                        id="apiKeyInput" 
+                        class="api-key-input"
+                        placeholder="Inserisci la tua API Key (es: sk-or-v1-...)"
+                        autocomplete="off"
+                    >
+                    <button id="saveApiKeyBtn" class="btn btn-save-api"><i class="fas fa-save"></i> Salva</button>
+                </div>
+                <div id="apiKeyStatus" class="api-key-status hidden"></div>
+                <p class="api-key-info">
+                    <i class="fas fa-shield-alt"></i> 
+                    <strong>Sicurezza:</strong> La tua API Key viene salvata <strong>SOLO nel tuo browser</strong> (localStorage) e <strong>non viene mai condivisa</strong> con server esterni o altri utenti. Viene utilizzata esclusivamente per le richieste dirette a OpenRouter API dal tuo dispositivo.
+                    <br><br>
+                    <i class="fas fa-key"></i> 
+                    <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer">Ottieni una API Key qui</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>
