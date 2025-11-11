@@ -1,6 +1,73 @@
 // API Key per OpenRouter
-const OPENROUTER_API_KEY = '';
+// IMPORTANTE: La chiave API è memorizzata SOLO in localStorage del browser (lato client)
+// Non viene mai inviata a server esterni eccetto OpenRouter API per le richieste
+// Non viene mai esposta pubblicamente o condivisa
+let OPENROUTER_API_KEY = '';
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
+
+// Carica API Key da localStorage all'avvio
+// La chiave è memorizzata SOLO localmente nel browser dell'utente
+function loadApiKey() {
+    try {
+        const savedKey = localStorage.getItem('openrouter_api_key');
+        if (savedKey && savedKey.trim().length > 0) {
+            OPENROUTER_API_KEY = savedKey.trim();
+            const apiKeyInput = document.getElementById('apiKeyInput');
+            if (apiKeyInput) {
+                // Mostra solo gli ultimi 4 caratteri per sicurezza
+                const maskedKey = savedKey.length > 4 
+                    ? '•'.repeat(savedKey.length - 4) + savedKey.slice(-4)
+                    : '•'.repeat(savedKey.length);
+                apiKeyInput.value = savedKey; // Mantieni il valore completo per funzionamento
+                // Nota: il campo è type="password" quindi non sarà visibile comunque
+            }
+        }
+    } catch (error) {
+        // Errore nell'accesso a localStorage (es. modalità privata)
+        console.error('Impossibile accedere a localStorage:', error);
+        OPENROUTER_API_KEY = '';
+    }
+}
+
+// Salva API Key in localStorage
+// SICUREZZA: La chiave viene salvata SOLO nel browser locale, mai su server esterni
+function saveApiKey() {
+    const apiKeyInput = document.getElementById('apiKeyInput');
+    const apiKeyStatus = document.getElementById('apiKeyStatus');
+    const key = apiKeyInput.value.trim();
+    
+    if (!key) {
+        apiKeyStatus.innerHTML = '<div class="api-key-error"><i class="fas fa-exclamation-circle"></i> Inserisci una API Key valida</div>';
+        apiKeyStatus.classList.remove('hidden');
+        return;
+    }
+    
+    // Validazione base della chiave
+    if (key.length < 10) {
+        apiKeyStatus.innerHTML = '<div class="api-key-error"><i class="fas fa-exclamation-circle"></i> La API Key sembra troppo corta. Verifica di averla inserita correttamente.</div>';
+        apiKeyStatus.classList.remove('hidden');
+        return;
+    }
+    
+    try {
+        // Salva SOLO in localStorage (lato client, mai su server)
+        OPENROUTER_API_KEY = key;
+        localStorage.setItem('openrouter_api_key', key);
+        
+        apiKeyStatus.innerHTML = '<div class="api-key-success"><i class="fas fa-check-circle"></i> API Key salvata localmente con successo! La chiave è memorizzata solo nel tuo browser.</div>';
+        apiKeyStatus.classList.remove('hidden');
+        
+        // Nascondi il messaggio dopo 4 secondi
+        setTimeout(() => {
+            apiKeyStatus.classList.add('hidden');
+        }, 4000);
+    } catch (error) {
+        // Errore nel salvataggio (es. localStorage disabilitato)
+        apiKeyStatus.innerHTML = '<div class="api-key-error"><i class="fas fa-exclamation-circle"></i> Impossibile salvare la chiave. Verifica che localStorage sia abilitato nel tuo browser.</div>';
+        apiKeyStatus.classList.remove('hidden');
+        console.error('Errore nel salvataggio API key:', error);
+    }
+}
 
 // Array di ricette base (verrà espanso con chiamate API)
 let recipes = [];
@@ -10,9 +77,35 @@ let selectedIngredients = [];
 
 // Inizializzazione
 document.addEventListener('DOMContentLoaded', () => {
+    loadApiKey(); // Carica API Key salvata
     initializeRecipes();
     setupEventListeners();
 });
+
+// Toggle API Key Modal
+function toggleApiKeyModal() {
+    const modal = document.getElementById('apiKeyModal');
+    if (modal) {
+        modal.classList.toggle('hidden');
+        // Focus on input when opening
+        if (!modal.classList.contains('hidden')) {
+            setTimeout(() => {
+                const input = document.getElementById('apiKeyInput');
+                if (input) {
+                    input.focus();
+                }
+            }, 100);
+        }
+    }
+}
+
+// Close API Key Modal
+function closeApiKeyModal() {
+    const modal = document.getElementById('apiKeyModal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+}
 
 // Setup event listeners
 function setupEventListeners() {
@@ -21,6 +114,11 @@ function setupEventListeners() {
     const searchBtn = document.getElementById('searchRecipesBtn');
     const testAPIBtn = document.getElementById('testAPIBtn');
     const generateRecipeBtn = document.getElementById('generateRecipeBtn');
+    const saveApiKeyBtn = document.getElementById('saveApiKeyBtn');
+    const apiKeyInput = document.getElementById('apiKeyInput');
+    const apiKeyToggleBtn = document.getElementById('apiKeyToggleBtn');
+    const apiKeyCloseBtn = document.getElementById('apiKeyCloseBtn');
+    const apiKeyModal = document.getElementById('apiKeyModal');
 
     addBtn.addEventListener('click', addIngredient);
     input.addEventListener('keypress', (e) => {
@@ -31,6 +129,43 @@ function setupEventListeners() {
     searchBtn.addEventListener('click', searchRecipes);
     testAPIBtn.addEventListener('click', testAPIKey);
     generateRecipeBtn.addEventListener('click', generateRecipeFromPreferences);
+    
+    // API Key modal listeners
+    if (apiKeyToggleBtn) {
+        apiKeyToggleBtn.addEventListener('click', toggleApiKeyModal);
+    }
+    if (apiKeyCloseBtn) {
+        apiKeyCloseBtn.addEventListener('click', closeApiKeyModal);
+    }
+    if (apiKeyModal) {
+        // Close modal when clicking overlay
+        const overlay = apiKeyModal.querySelector('.api-key-modal-overlay');
+        if (overlay) {
+            overlay.addEventListener('click', closeApiKeyModal);
+        }
+        // Close modal with Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !apiKeyModal.classList.contains('hidden')) {
+                closeApiKeyModal();
+            }
+        });
+    }
+    
+    // API Key save listeners
+    if (saveApiKeyBtn) {
+        saveApiKeyBtn.addEventListener('click', () => {
+            saveApiKey();
+            // Optionally close modal after saving (or keep it open)
+            // closeApiKeyModal();
+        });
+    }
+    if (apiKeyInput) {
+        apiKeyInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                saveApiKey();
+            }
+        });
+    }
 
     // Tab switching
     const tabButtons = document.querySelectorAll('.tab-btn');
@@ -135,11 +270,13 @@ Ricette da creare: Pasta al pomodoro, Frittata di uova, Pancake, Insalata mista,
 Rispondi SOLO con il JSON, senza testo aggiuntivo.`;
 
     try {
+        // SICUREZZA: La chiave API viene inviata SOLO direttamente a OpenRouter API
+        // Non passa attraverso server intermedi e non viene mai esposta pubblicamente
         const response = await fetch(OPENROUTER_API_URL, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+                'Authorization': `Bearer ${OPENROUTER_API_KEY}`, // Inviata solo a OpenRouter API
                 'HTTP-Referer': window.location.origin,
                 'X-Title': 'FrigoChef'
             },
@@ -464,11 +601,16 @@ Rispondi SOLO con il JSON, senza testo aggiuntivo.`;
         }, 3000);
 
     } catch (error) {
+        // Non esporre mai la chiave API negli errori
         console.error('Errore test API:', error);
+        const errorMessage = error.message || 'Errore sconosciuto';
+        // Rimuovi qualsiasi riferimento alla chiave API dal messaggio di errore
+        const safeErrorMessage = errorMessage.replace(/sk-or-v1-[^\s]+/gi, '[API_KEY_HIDDEN]');
+        
         testResult.innerHTML = `
             <div class="api-test-error">
                 <h3><i class="fas fa-times"></i> Errore nel test dell'API</h3>
-                <p><strong>Messaggio:</strong> ${error.message}</p>
+                <p><strong>Messaggio:</strong> ${safeErrorMessage}</p>
                 <p>Verifica che la API key sia corretta e che il servizio OpenRouter sia disponibile.</p>
             </div>
         `;
@@ -499,11 +641,13 @@ Il formato deve essere: https://source.unsplash.com/400x300/?parola1,parola2,par
 Rispondi SOLO con il JSON, senza testo aggiuntivo.`;
 
     try {
+        // SICUREZZA: La chiave API viene inviata SOLO direttamente a OpenRouter API
+        // Non passa attraverso server intermedi e non viene mai esposta pubblicamente
         const response = await fetch(OPENROUTER_API_URL, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+                'Authorization': `Bearer ${OPENROUTER_API_KEY}`, // Inviata solo a OpenRouter API
                 'HTTP-Referer': window.location.origin,
                 'X-Title': 'FrigoChef'
             },
@@ -601,11 +745,13 @@ IMPORTANTE:
 Rispondi SOLO con il JSON, senza testo aggiuntivo.`;
 
     try {
+        // SICUREZZA: La chiave API viene inviata SOLO direttamente a OpenRouter API
+        // Non passa attraverso server intermedi e non viene mai esposta pubblicamente
         const response = await fetch(OPENROUTER_API_URL, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+                'Authorization': `Bearer ${OPENROUTER_API_KEY}`, // Inviata solo a OpenRouter API
                 'HTTP-Referer': window.location.origin,
                 'X-Title': 'FrigoChef'
             },
@@ -908,11 +1054,13 @@ La ricetta deve essere creativa, appetitosa e rispettare tutte le preferenze ind
 Rispondi SOLO con il JSON, senza testo aggiuntivo.`;
 
     try {
+        // SICUREZZA: La chiave API viene inviata SOLO direttamente a OpenRouter API
+        // Non passa attraverso server intermedi e non viene mai esposta pubblicamente
         const response = await fetch(OPENROUTER_API_URL, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+                'Authorization': `Bearer ${OPENROUTER_API_KEY}`, // Inviata solo a OpenRouter API
                 'HTTP-Referer': window.location.origin,
                 'X-Title': 'FrigoChef'
             },
